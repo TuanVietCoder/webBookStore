@@ -1,0 +1,92 @@
+erDiagram
+    Bundles |o--o{ CartItems : "BundleRowId"
+    BundleRevisions |o--o{ CartItems : "BundleRevisionRowId"
+    Coupons |o--o{ Orders : "CouponRowId"
+    Events |o--o{ Orders : "EventRowId"
+    CouponRevisions |o--o{ Orders : "CouponRevisionRowId"
+    EventRevisions |o--o{ Orders : "EventRevisionRowId"
+    Bundles |o--o{ OrderItems : "BundleRowId"
+    BundleRevisions |o--o{ OrderItems : "BundleRevisionRowId"
+    BundleRevisions ||--o{ BundleBooks : "BundleRevisionRowId"
+    Books ||--o{ BundleBooks : "BookRowId"
+    EventRevisions ||--o{ EventBooks : "EventRevisionRowId"
+    Books ||--o{ EventBooks : "BookRowId"
+    EventRevisions ||--o{ EventBundles : "EventRevisionRowId"
+    Bundles ||--o{ EventBundles : "BundleRowId"
+    Coupons ||--o{ CouponUsages : "CouponRowId"
+    Orders ||--o| CouponUsages : "OrderRowId"
+    Users ||--o{ CouponUsages : "BuyerRowId"
+    CouponRevisions ||--o{ CouponUsages : "CouponRevisionRowId"
+    Bundles ||--o{ BundleRevisions : "BundleRowId"
+    Events ||--o{ EventRevisions : "EventRowId"
+    Coupons ||--o{ CouponRevisions : "CouponRowId"
+    Bundles {
+        BIGINT RowId PK
+        VARCHAR BundleId UK
+    }
+    BundleBooks {
+        BIGINT RowId PK
+        BIGINT BundleRevisionRowId FK
+        BIGINT BookRowId FK
+    }
+    Events {
+        BIGINT RowId PK
+        VARCHAR EventId UK
+    }
+    EventBooks {
+        BIGINT RowId PK
+        BIGINT EventRevisionRowId FK
+        BIGINT BookRowId FK
+    }
+    EventBundles {
+        BIGINT RowId PK
+        BIGINT EventRevisionRowId FK
+        BIGINT BundleRowId FK
+    }
+    Coupons {
+        BIGINT RowId PK
+        VARCHAR CouponId UK
+        VARCHAR CouponCode UK
+    }
+    CouponUsages {
+        BIGINT RowId PK
+        BIGINT CouponRowId FK
+        BIGINT OrderRowId FK
+        BIGINT BuyerRowId FK
+        VARCHAR UsageStatus
+        BIGINT CouponRevisionRowId FK
+    }
+    BundleRevisions {
+        BIGINT RowId PK
+        BIGINT BundleRowId FK
+        VARCHAR BundleType
+        VARCHAR ApprovalStatus
+    }
+    EventRevisions {
+        BIGINT RowId PK
+        BIGINT EventRowId FK
+        VARCHAR EventType
+        VARCHAR ThemePresetCode
+        VARCHAR ApprovalStatus
+    }
+    CouponRevisions {
+        BIGINT RowId PK
+        BIGINT CouponRowId FK
+        VARCHAR DiscountType
+        VARCHAR ApprovalStatus
+    }
+    Books {
+        BIGINT RowId PK
+    }
+    CartItems {
+        BIGINT RowId PK
+    }
+    OrderItems {
+        BIGINT RowId PK
+    }
+    Orders {
+        BIGINT RowId PK
+    }
+    Users {
+        BIGINT RowId PK
+    }

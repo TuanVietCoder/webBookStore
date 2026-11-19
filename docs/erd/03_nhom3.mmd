@@ -1,0 +1,156 @@
+erDiagram
+    Users ||--o{ Carts : "BuyerRowId"
+    Carts ||--o{ CartItems : "CartRowId"
+    Books |o--o{ CartItems : "BookRowId"
+    Bundles |o--o{ CartItems : "BundleRowId"
+    Users ||--o{ CartItems : "RecipientUserRowId"
+    BundleRevisions |o--o{ CartItems : "BundleRevisionRowId"
+    CartItems ||--o{ CartItemBooks : "CartItemRowId"
+    Books ||--o{ CartItemBooks : "BookRowId"
+    Users ||--o{ Orders : "BuyerRowId"
+    Coupons |o--o{ Orders : "CouponRowId"
+    Events |o--o{ Orders : "EventRowId"
+    Carts ||--o| Orders : "CartRowId"
+    CouponRevisions |o--o{ Orders : "CouponRevisionRowId"
+    EventRevisions |o--o{ Orders : "EventRevisionRowId"
+    Orders ||--o{ OrderItems : "OrderRowId"
+    Books |o--o{ OrderItems : "BookRowId"
+    Bundles |o--o{ OrderItems : "BundleRowId"
+    Users ||--o{ OrderItems : "RecipientUserRowId"
+    BundleRevisions |o--o{ OrderItems : "BundleRevisionRowId"
+    OrderItems ||--o{ OrderItemBooks : "OrderItemRowId"
+    Books ||--o{ OrderItemBooks : "BookRowId"
+    Orders ||--o{ PaymentAttempts : "OrderRowId"
+    PaymentAttempts ||--o{ PaymentGatewayEvents : "PaymentAttemptRowId"
+    Orders ||--o{ OrderStatusHistory : "OrderRowId"
+    Users ||--o{ DigitalEntitlements : "UserRowId"
+    Books ||--o{ DigitalEntitlements : "BookRowId"
+    DigitalEntitlements ||--o{ EntitlementSources : "EntitlementRowId"
+    OrderItemBooks ||--o| EntitlementSources : "OrderItemBookRowId"
+    Users ||--o{ BookAccessLogs : "UserRowId"
+    Books ||--o{ BookAccessLogs : "BookRowId"
+    Orders ||--o| CouponUsages : "OrderRowId"
+    OrderItemBooks ||--o{ Reviews : "VerifiedOrderItemBookRowId"
+    Orders |o--o{ Complaints : "OrderRowId"
+    EntitlementSources |o--o{ Complaints : "EntitlementSourceRowId"
+    PaymentGatewayEvents |o--o{ PaymentCallbackReceipts : "GatewayEventRowId"
+    Carts {
+        BIGINT RowId PK
+        BIGINT BuyerRowId FK
+        VARCHAR CartStatus
+    }
+    CartItems {
+        BIGINT RowId PK
+        BIGINT CartRowId FK
+        VARCHAR ProductType
+        BIGINT BookRowId FK
+        BIGINT BundleRowId FK
+        BIGINT RecipientUserRowId FK
+        BIGINT BundleRevisionRowId FK
+    }
+    CartItemBooks {
+        BIGINT RowId PK
+        BIGINT CartItemRowId FK
+        BIGINT BookRowId FK
+    }
+    Orders {
+        BIGINT RowId PK
+        VARCHAR OrderId UK
+        BIGINT BuyerRowId FK
+        VARCHAR OrderStatus
+        BIGINT CouponRowId FK
+        BIGINT EventRowId FK
+        BIGINT CartRowId FK
+        BIGINT CouponRevisionRowId FK
+        BIGINT EventRevisionRowId FK
+    }
+    OrderItems {
+        BIGINT RowId PK
+        BIGINT OrderRowId FK
+        VARCHAR ProductType
+        BIGINT BookRowId FK
+        BIGINT BundleRowId FK
+        BIGINT RecipientUserRowId FK
+        BIGINT BundleRevisionRowId FK
+    }
+    OrderItemBooks {
+        BIGINT RowId PK
+        BIGINT OrderItemRowId FK
+        BIGINT BookRowId FK
+    }
+    PaymentAttempts {
+        BIGINT RowId PK
+        VARCHAR PaymentAttemptId UK
+        BIGINT OrderRowId FK
+        VARCHAR Status
+        VARCHAR FailureCode
+        VARCHAR PaymentType
+    }
+    PaymentGatewayEvents {
+        BIGINT RowId PK
+        VARCHAR GatewayEventId UK
+        BIGINT PaymentAttemptRowId FK
+        VARCHAR GatewayStatus
+    }
+    OrderStatusHistory {
+        BIGINT RowId PK
+        BIGINT OrderRowId FK
+        VARCHAR OldStatus
+        VARCHAR NewStatus
+    }
+    DigitalEntitlements {
+        BIGINT RowId PK
+        BIGINT UserRowId FK
+        BIGINT BookRowId FK
+        VARCHAR EntitlementStatus
+    }
+    EntitlementSources {
+        BIGINT RowId PK
+        BIGINT EntitlementRowId FK
+        BIGINT OrderItemBookRowId FK
+        VARCHAR SourceType
+    }
+    BookAccessLogs {
+        BIGINT RowId PK
+        BIGINT UserRowId FK
+        BIGINT BookRowId FK
+        VARCHAR AccessType
+    }
+    PaymentCallbackReceipts {
+        BIGINT RowId PK
+        BIGINT GatewayEventRowId FK
+        VARCHAR ReasonCode
+    }
+    Books {
+        BIGINT RowId PK
+    }
+    BundleRevisions {
+        BIGINT RowId PK
+    }
+    Bundles {
+        BIGINT RowId PK
+    }
+    Complaints {
+        BIGINT RowId PK
+    }
+    CouponRevisions {
+        BIGINT RowId PK
+    }
+    CouponUsages {
+        BIGINT RowId PK
+    }
+    Coupons {
+        BIGINT RowId PK
+    }
+    EventRevisions {
+        BIGINT RowId PK
+    }
+    Events {
+        BIGINT RowId PK
+    }
+    Reviews {
+        BIGINT RowId PK
+    }
+    Users {
+        BIGINT RowId PK
+    }

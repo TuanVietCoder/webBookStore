@@ -38,3 +38,9 @@ Website quản trị cho Employee và Manager. Viết bằng JavaScript thuần 
 - Chưa có CSRF, tải file PDF thật (chỉ giả lập tên và dung lượng), thông báo qua Outbox.
 - Trạng thái DISABLED của Bundle/Event/Coupon đang dùng cờ tắt; chờ chốt cách thống nhất trong đặc tả.
 - Quyền Employee với Tri thức AI và Cấu hình hệ thống đang tạm chỉ Manager.
+
+## Cơ sở dữ liệu
+
+- `database/schema.sql`: script tạo CSDL SQL Server (53 bảng, khóa ngoại, index, CHECK, dữ liệu 3 vai trò). Tạo một database trống rồi chạy script.
+- `docs/ERD.md`: sơ đồ quan hệ thực thể theo từng nhóm (Mermaid), ảnh PNG nằm trong `docs/erd/`.
+- Xem sơ đồ trong SSMS: chạy `schema.sql`, rồi Database Diagrams > New Database Diagram.

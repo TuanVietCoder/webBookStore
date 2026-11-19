@@ -1,0 +1,25 @@
+erDiagram
+    Users |o--o{ AuditLogs : "ActorUserRowId"
+    AuditLogs {
+        BIGINT RowId PK
+        BIGINT ActorUserRowId FK
+        VARCHAR ActorType
+        VARCHAR ActionCode
+    }
+    SystemLogs {
+        BIGINT RowId PK
+        VARCHAR ExceptionCode
+    }
+    SystemSettings {
+        BIGINT RowId PK
+        VARCHAR SettingKey UK
+    }
+    OutboxMessages {
+        BIGINT RowId PK
+        VARCHAR MessageKey UK
+        VARCHAR EventType
+        VARCHAR DeliveryStatus
+    }
+    Users {
+        BIGINT RowId PK
+    }

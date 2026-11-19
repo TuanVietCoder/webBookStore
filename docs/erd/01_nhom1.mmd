@@ -1,0 +1,111 @@
+erDiagram
+    Roles ||--o{ RolePermissions : "RoleRowId"
+    Permissions ||--o{ RolePermissions : "PermissionRowId"
+    Roles ||--o{ Users : "RoleRowId"
+    Users ||--o{ UserSessions : "UserRowId"
+    Users ||--o{ PasswordResetRequests : "UserRowId"
+    Users ||--o{ Notifications : "RecipientUserRowId"
+    Users ||--o{ WishlistItems : "BuyerRowId"
+    Users ||--o{ BrowsingHistory : "BuyerRowId"
+    Users ||--o{ Carts : "BuyerRowId"
+    Users ||--o{ CartItems : "RecipientUserRowId"
+    Users ||--o{ Orders : "BuyerRowId"
+    Users ||--o{ OrderItems : "RecipientUserRowId"
+    Users ||--o{ DigitalEntitlements : "UserRowId"
+    Users ||--o{ BookAccessLogs : "UserRowId"
+    Users ||--o{ CouponUsages : "BuyerRowId"
+    Users ||--o{ Reviews : "BuyerRowId"
+    Users ||--o{ ContentReports : "ReporterUserRowId"
+    Users ||--o{ Complaints : "BuyerRowId"
+    Users ||--o{ ComplaintMessages : "SenderUserRowId"
+    Users |o--o{ AIConversations : "OwnerUserRowId"
+    Users |o--o{ AIActionLogs : "InitiatorUserRowId"
+    Users |o--o{ AuditLogs : "ActorUserRowId"
+    Users ||--o{ AIActionRequests : "InitiatorUserRowId"
+    Roles {
+        BIGINT RowId PK
+        VARCHAR RoleCode UK
+    }
+    Permissions {
+        BIGINT RowId PK
+        VARCHAR PermissionCode UK
+        VARCHAR ModuleCode
+    }
+    RolePermissions {
+        BIGINT RowId PK
+        BIGINT RoleRowId FK
+        BIGINT PermissionRowId FK
+    }
+    Users {
+        BIGINT RowId PK
+        VARCHAR UserId UK
+        BIGINT RoleRowId FK
+        VARCHAR AccountStatus
+        NVARCHAR NormalizedEmail UK
+    }
+    UserSessions {
+        BIGINT RowId PK
+        BIGINT UserRowId FK
+        CHAR RefreshTokenHash UK
+    }
+    PasswordResetRequests {
+        BIGINT RowId PK
+        BIGINT UserRowId FK
+        CHAR TokenHash UK
+    }
+    Notifications {
+        BIGINT RowId PK
+        BIGINT RecipientUserRowId FK
+        VARCHAR NotificationType
+    }
+    AIActionLogs {
+        BIGINT RowId PK
+    }
+    AIActionRequests {
+        BIGINT RowId PK
+    }
+    AIConversations {
+        BIGINT RowId PK
+    }
+    AuditLogs {
+        BIGINT RowId PK
+    }
+    BookAccessLogs {
+        BIGINT RowId PK
+    }
+    BrowsingHistory {
+        BIGINT RowId PK
+    }
+    CartItems {
+        BIGINT RowId PK
+    }
+    Carts {
+        BIGINT RowId PK
+    }
+    ComplaintMessages {
+        BIGINT RowId PK
+    }
+    Complaints {
+        BIGINT RowId PK
+    }
+    ContentReports {
+        BIGINT RowId PK
+    }
+    CouponUsages {
+        BIGINT RowId PK
+    }
+    DigitalEntitlements {
+        BIGINT RowId PK
+    }
+    OrderItems {
+        BIGINT RowId PK
+    }
+    Orders {
+        BIGINT RowId PK
+    }
+    Reviews {
+        BIGINT RowId PK
+    }
+    WishlistItems {
+        BIGINT RowId PK
+    }

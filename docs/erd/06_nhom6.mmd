@@ -1,0 +1,42 @@
+erDiagram
+    Users |o--o{ AIConversations : "OwnerUserRowId"
+    AIConversations ||--o{ AIMessages : "ConversationRowId"
+    AIConversations ||--o{ AIActionLogs : "ConversationRowId"
+    Users |o--o{ AIActionLogs : "InitiatorUserRowId"
+    AIActionRequests |o--o{ AIActionLogs : "ActionRequestRowId"
+    Users ||--o{ AIActionRequests : "InitiatorUserRowId"
+    AIConversations ||--o{ AIActionRequests : "ConversationRowId"
+    AIConversations {
+        BIGINT RowId PK
+        BIGINT OwnerUserRowId FK
+        VARCHAR AssistantType
+        VARCHAR ConversationStatus
+    }
+    AIMessages {
+        BIGINT RowId PK
+        BIGINT ConversationRowId FK
+    }
+    AIActionLogs {
+        BIGINT RowId PK
+        BIGINT ConversationRowId FK
+        BIGINT InitiatorUserRowId FK
+        VARCHAR ActionType
+        VARCHAR ConfirmationStatus
+        VARCHAR ExecutionStatus
+        BIGINT ActionRequestRowId FK
+    }
+    KnowledgeArticles {
+        BIGINT RowId PK
+        VARCHAR ArticleCode UK
+        VARCHAR ArticleStatus
+    }
+    AIActionRequests {
+        BIGINT RowId PK
+        BIGINT InitiatorUserRowId FK
+        BIGINT ConversationRowId FK
+        BINARY TokenHash UK
+        VARCHAR RequestStatus
+    }
+    Users {
+        BIGINT RowId PK
+    }

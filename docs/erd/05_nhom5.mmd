@@ -1,0 +1,53 @@
+erDiagram
+    Users ||--o{ Reviews : "BuyerRowId"
+    Books ||--o{ Reviews : "BookRowId"
+    OrderItemBooks ||--o{ Reviews : "VerifiedOrderItemBookRowId"
+    Users ||--o{ ContentReports : "ReporterUserRowId"
+    Users ||--o{ Complaints : "BuyerRowId"
+    Orders |o--o{ Complaints : "OrderRowId"
+    EntitlementSources |o--o{ Complaints : "EntitlementSourceRowId"
+    Complaints ||--o{ ComplaintMessages : "ComplaintRowId"
+    Users ||--o{ ComplaintMessages : "SenderUserRowId"
+    Reviews {
+        BIGINT RowId PK
+        BIGINT BuyerRowId FK
+        BIGINT BookRowId FK
+        BIGINT VerifiedOrderItemBookRowId FK
+        VARCHAR ReviewStatus
+    }
+    ContentReports {
+        BIGINT RowId PK
+        VARCHAR ReportId UK
+        BIGINT ReporterUserRowId FK
+        VARCHAR TargetType
+        VARCHAR ReasonCode
+        VARCHAR ReportStatus
+    }
+    Complaints {
+        BIGINT RowId PK
+        VARCHAR ComplaintId UK
+        BIGINT BuyerRowId FK
+        BIGINT OrderRowId FK
+        VARCHAR ComplaintStatus
+        BIGINT EntitlementSourceRowId FK
+    }
+    ComplaintMessages {
+        BIGINT RowId PK
+        BIGINT ComplaintRowId FK
+        BIGINT SenderUserRowId FK
+    }
+    Books {
+        BIGINT RowId PK
+    }
+    EntitlementSources {
+        BIGINT RowId PK
+    }
+    OrderItemBooks {
+        BIGINT RowId PK
+    }
+    Orders {
+        BIGINT RowId PK
+    }
+    Users {
+        BIGINT RowId PK
+    }

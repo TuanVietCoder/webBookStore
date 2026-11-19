@@ -1,0 +1,102 @@
+erDiagram
+    Publishers |o--o{ Books : "PublisherRowId"
+    Books ||--o{ BookFiles : "BookRowId"
+    Categories |o--o{ Categories : "ParentCategoryRowId"
+    Books ||--o{ BookAuthors : "BookRowId"
+    Authors ||--o{ BookAuthors : "AuthorRowId"
+    Books ||--o{ BookCategories : "BookRowId"
+    Categories ||--o{ BookCategories : "CategoryRowId"
+    Books ||--o{ BookImages : "BookRowId"
+    Users ||--o{ WishlistItems : "BuyerRowId"
+    Books ||--o{ WishlistItems : "BookRowId"
+    Users ||--o{ BrowsingHistory : "BuyerRowId"
+    Books ||--o{ BrowsingHistory : "BookRowId"
+    Books |o--o{ CartItems : "BookRowId"
+    Books ||--o{ CartItemBooks : "BookRowId"
+    Books |o--o{ OrderItems : "BookRowId"
+    Books ||--o{ OrderItemBooks : "BookRowId"
+    Books ||--o{ DigitalEntitlements : "BookRowId"
+    Books ||--o{ BookAccessLogs : "BookRowId"
+    Books ||--o{ BundleBooks : "BookRowId"
+    Books ||--o{ EventBooks : "BookRowId"
+    Books ||--o{ Reviews : "BookRowId"
+    Books {
+        BIGINT RowId PK
+        VARCHAR BookId UK
+        BIGINT PublisherRowId FK
+        VARCHAR LanguageCode
+        VARCHAR Status
+    }
+    BookFiles {
+        BIGINT RowId PK
+        BIGINT BookRowId FK
+        NVARCHAR StorageKey UK
+        VARCHAR MimeType
+    }
+    Authors {
+        BIGINT RowId PK
+        VARCHAR AuthorCode
+    }
+    Publishers {
+        BIGINT RowId PK
+        VARCHAR PublisherCode
+    }
+    Categories {
+        BIGINT RowId PK
+        VARCHAR CategoryCode UK
+        BIGINT ParentCategoryRowId FK
+    }
+    BookAuthors {
+        BIGINT RowId PK
+        BIGINT BookRowId FK
+        BIGINT AuthorRowId FK
+    }
+    BookCategories {
+        BIGINT RowId PK
+        BIGINT BookRowId FK
+        BIGINT CategoryRowId FK
+    }
+    BookImages {
+        BIGINT RowId PK
+        BIGINT BookRowId FK
+    }
+    WishlistItems {
+        BIGINT RowId PK
+        BIGINT BuyerRowId FK
+        BIGINT BookRowId FK
+    }
+    BrowsingHistory {
+        BIGINT RowId PK
+        BIGINT BuyerRowId FK
+        BIGINT BookRowId FK
+    }
+    BookAccessLogs {
+        BIGINT RowId PK
+    }
+    BundleBooks {
+        BIGINT RowId PK
+    }
+    CartItemBooks {
+        BIGINT RowId PK
+    }
+    CartItems {
+        BIGINT RowId PK
+    }
+    DigitalEntitlements {
+        BIGINT RowId PK
+    }
+    EventBooks {
+        BIGINT RowId PK
+    }
+    OrderItemBooks {
+        BIGINT RowId PK
+    }
+    OrderItems {
+        BIGINT RowId PK
+    }
+    Reviews {
+        BIGINT RowId PK
+    }
+    Users {
+        BIGINT RowId PK
+    }
