@@ -56,7 +56,7 @@ function mount() {
   input.setAttribute('aria-label','Nhập câu hỏi về sách');
   const submit = add(form, el('button','book-chat-send','➤'));
   submit.type='submit';submit.setAttribute('aria-label','Gửi câu hỏi');
-  add(panel, el('p','book-chat-disclaimer','Trợ lý chỉ dùng dữ liệu công khai của nhà sách. Nếu cần xử lý đơn hàng, hãy vào mục Hỗ trợ.'));
+  add(panel, el('p','book-chat-disclaimer','Trợ lý dùng dữ liệu công khai của nhà sách; khi bạn đăng nhập, trợ lý chỉ xem được đơn hàng của chính bạn. Nếu cần xử lý đơn hàng, hãy vào mục Hỗ trợ.'));
 
   let lastBookIds=[];
   let lastTurns=[];

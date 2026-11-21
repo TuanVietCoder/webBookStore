@@ -261,7 +261,8 @@ Menu **Admin → Trợ lý AI Admin** hỏi đáp bằng mô hình ngôn ngữ t
 2. Mô hình chỉ **chọn tool** trong danh sách do server cấp theo vai trò (`backend/src/llm/shared.js`): Employee không có tool doanh thu/audit. Mỗi tool tự kiểm quyền lần nữa và chỉ đọc dữ liệu rút gọn. Vai trò lấy từ phiên đăng nhập phía server, không tin dữ liệu từ trình duyệt.
 3. Thao tác thay đổi dữ liệu (khóa tài khoản) chỉ tạo **bản xem trước**; người dùng bấm xác nhận (token dùng một lần, hết hạn sau 5 phút, từ chối nếu dữ liệu đã đổi) thì mới thực thi và ghi audit với nguồn `AI`.
 4. Chatbot của **Client** dùng OpenAI (`OPENAI_API_KEY`) hoặc Claude (`ANTHROPIC_API_KEY`, dùng chung khóa với AI Admin): ưu tiên OpenAI nếu có khóa OpenAI thật, ngược lại dùng Claude; ép chọn bằng `CLIENT_CHAT_PROVIDER=openai|claude`. Khóa bắt đầu bằng `sk-ant-` không bao giờ bị gửi tới OpenAI.
-5. Kiểm thử không cần khóa thật: `npm test` (gồm `backend/tests/ai-admin.test.js` dùng Claude giả) và `npm run test:ui` (Playwright, cần `npm install --no-save playwright`).
+5. **Chatbot Client xem đơn hàng:** khi Buyer đã đăng nhập và hỏi kiểu "tôi đã thanh toán những đơn nào", "đơn ORD-2026-0001 của tôi", backend tự tra đơn của chính Buyer đó rồi dựng câu trả lời (không gửi dữ liệu đơn cho nhà cung cấp AI). Chưa đăng nhập hoặc là tài khoản nhân viên thì chatbot yêu cầu đăng nhập; mã đơn của người khác không bao giờ hiện ra. Câu hỏi cách làm ("thanh toán thế nào") vẫn đi đường FAQ.
+6. Kiểm thử không cần khóa thật: `npm test` (gồm `backend/tests/ai-admin.test.js` dùng Claude giả) và `npm run test:ui` (Playwright, cần `npm install --no-save playwright`).
 
 ## Cơ sở dữ liệu SQL Server và sơ đồ
 `database/schema.sql` (53 bảng theo đặc tả v2.0.3) và `docs/ERD.md`. Backend hiện tại lưu bằng file JSON; schema này dành cho bước chuyển sang SQL Server. Chi tiết ghép nối: `docs/TICH_HOP.md`.

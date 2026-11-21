@@ -133,7 +133,7 @@ const server = http.createServer(async (req,res) => {
     if (routePath==='/shop/chat/status' && req.method==='GET') { json(res,200,chatStatus()); return; }
     if (routePath==='/shop/chat' && req.method==='POST') {
       limitChat(req);
-      const answer=await clientChat(req.method,routePath,await parseBody(req));
+      const answer=await clientChat(req.method,routePath,await parseBody(req),user);
       json(res,answer.status||200,answer.data); return;
     }
     if (routePath==='/shop/gifts/claim' && req.method==='POST' && user) limitGift(req,user);

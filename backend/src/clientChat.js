@@ -222,7 +222,30 @@ export function chatStatus() {
   return { available:true, mode:chatProvider() ? 'ai' : 'catalog', scope:'BOOKSTORE_ONLY', requiresLogin:false };
 }
 
-export async function clientChat(method, path, body) {
+// ---- Hỏi về đơn hàng của CHÍNH người đang đăng nhập (chỉ đọc, backend tự dựng câu trả lời, không gửi dữ liệu đơn cho nhà cung cấp AI) ----
+const ORDER_WORD = /\b(don hang|don cua|don nao|nhung don|cac don|lich su mua|lich su don|da mua|da thanh toan|trang thai don|ma don)\b/;
+const SELF = /\b(toi|minh|em|cua toi|cua minh)\b/;
+const HOWTO = /\b(the nao|lam sao|lam the nao|cach|huong dan|o dau|duoc khong|co the khong)\b/;
+const STATUS_LABEL = { PAID: 'Đã thanh toán', PENDING_PAYMENT: 'Chờ thanh toán', PENDING: 'Chờ xử lý', CANCELLED: 'Đã hủy' };
+export const asksAboutOwnOrders = (message) => { const q = simplify(message); return (/\bord ?\d{4}/.test(q) || (ORDER_WORD.test(q) && SELF.test(q))) && !HOWTO.test(q); };
+function ordersAnswer(db, user, message) {
+  if (!user || user.role !== 'BUYER') return { answer: 'Bạn cần đăng nhập tài khoản khách hàng thì mình mới xem được đơn hàng của bạn. Sau khi đăng nhập, bạn hỏi lại giúp mình nhé.', needsLogin: true };
+  const q = simplify(message);
+  const mine = db.orders.filter((o) => o.buyerRowId === user.rowId).sort((a, b) => b.rowId - a.rowId);
+  const code = q.match(/\bord ?(\d{4}) ?(\d{4})\b/);
+  let list = mine, title = 'Các đơn hàng của bạn';
+  if (code) { list = mine.filter((o) => simplify(o.orderId).replace(/ /g, '') === `ord${code[1]}${code[2]}`); title = `Đơn ${code[0].toUpperCase()}`; }
+  else if (/\b(chua thanh toan|dang cho|cho thanh toan)\b/.test(q)) { list = mine.filter((o) => o.status === 'PENDING_PAYMENT'); title = 'Các đơn đang chờ thanh toán'; }
+  else if (/\b(da thanh toan|da mua|thanh toan xong|thanh toan roi)\b/.test(q)) { list = mine.filter((o) => o.status === 'PAID'); title = 'Các đơn bạn đã thanh toán'; }
+  if (!list.length) return { answer: code ? 'Mình không thấy đơn đó trong tài khoản của bạn.' : mine.length ? 'Bạn chưa có đơn nào ở trạng thái này.' : 'Tài khoản của bạn chưa có đơn hàng nào.' };
+  const date = (d) => (d ? new Date(d).toLocaleDateString('vi-VN') : '');
+  const lines = list.slice(0, 8).map((o) => `• ${o.orderId} — ${date(o.paidAt || o.createdAt)} — ${STATUS_LABEL[o.status] || o.status} — ${money(o.total)}${o.gift ? ' (đơn tặng)' : ''}\n   ${(o.items || []).slice(0, 3).map((i) => i.name || i.title).filter(Boolean).join(', ')}${(o.items || []).length > 3 ? '…' : ''}`);
+  const paid = list.filter((o) => o.status === 'PAID');
+  const sum = paid.length ? `\nTổng ${paid.length} đơn đã thanh toán: ${money(paid.reduce((s, o) => s + Number(o.total || 0), 0))}.` : '';
+  return { answer: `${title} (${list.length}):\n${lines.join('\n')}${list.length > 8 ? `\n… và ${list.length - 8} đơn khác, xem đủ ở mục Đơn hàng.` : ''}${sum}\nBạn xem chi tiết ở mục Đơn hàng của tôi.` };
+}
+
+export async function clientChat(method, path, body, user = null) {
   assert(method==='POST' && path==='/shop/chat', 'API chatbot không hỗ trợ phương thức này');
   const message = body.message;
   assert(typeof message==='string' && message.trim().length>=1 && message.trim().length<=400, 'Câu hỏi phải có từ 1 đến 400 ký tự', 'message');
@@ -233,9 +256,10 @@ export async function clientChat(method, path, body) {
   const books=catalog.books;
   const contextBookIds=(body.contextBookIds||[]).filter((id)=>books.some((b)=>b.rowId===id));
   const gate=isAllowed(message, books, contextBookIds);
-  if (!gate.allowed) return { data:{answer:REJECTION,books:[],inScope:false,mode:'restricted',suggestions:SUGGESTIONS} };
+  if (!gate.allowed && !asksAboutOwnOrders(message)) return { data:{answer:REJECTION,books:[],inScope:false,mode:'restricted',suggestions:SUGGESTIONS} };
   if (gate.greeting) return { data:{answer:WELCOME,books:[],inScope:true,mode:'catalog',suggestions:SUGGESTIONS} };
   const db=getDb();
+  if (asksAboutOwnOrders(message)) { const r=ordersAnswer(db,user,message); return { data:{answer:r.answer,books:[],inScope:true,mode:'account',needsLogin:!!r.needsLogin,suggestions:SUGGESTIONS} }; }
   const publicFaqs=db.knowledge.filter((k)=>k.status==='PUBLISHED' && k.clientVisible===true);
   const contextual=followupSelection(message,books,contextBookIds);
   const lexical=contextual.length?contextual:rankBooks(message,books,contextBookIds);
