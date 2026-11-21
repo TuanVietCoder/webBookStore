@@ -27,5 +27,5 @@ const BY_ROLE = {
 export const isRole = (r) => Object.prototype.hasOwnProperty.call(BY_ROLE, r);
 export const declarationsFor = (role) => BY_ROLE[role].map((name) => ({ name, ...TOOLS[name] }));
 // Dạng JSON Schema chuẩn (type chữ thường) cho nhà cung cấp dùng input_schema.
-const lower = (s) => (s && typeof s === 'object' ? Object.fromEntries(Object.entries(s).map(([k, v]) => [k, k === 'type' && typeof v === 'string' ? v.toLowerCase() : lower(v)])) : s);
+const lower = (s) => (Array.isArray(s) ? s.map(lower) : s && typeof s === 'object' ? Object.fromEntries(Object.entries(s).map(([k, v]) => [k, k === 'type' && typeof v === 'string' ? v.toLowerCase() : lower(v)])) : s);
 export const jsonSchemaTools = (role) => declarationsFor(role).map((d) => ({ name: d.name, description: d.description, input_schema: d.parameters ? lower(d.parameters) : { type: 'object', properties: {} } }));
