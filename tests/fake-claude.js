@@ -21,6 +21,7 @@ http.createServer((req, res) => {
     const call = (name, input) => out(200, { content: [{ type: 'text', text: 'Để mình kiểm tra.' }, { type: 'tool_use', id: 'toolu_01' + Math.random().toString(36).slice(2, 10), name, input }], stop_reason: 'tool_use' });
     if (t.includes('boom')) return out(529, { error: { type: 'overloaded_error', message: 'quá tải' } });
     if (t.includes('khóa')) return call('propose_disable_user', { email: (t.match(/\S+@\S+/) || [''])[0] });
+    if (t.includes('sách')) return call('search_books', { query: 'Dế Mèn' });
     if (t.includes('quy trình')) return call('search_knowledge', { query: 'thanh toán' });
     if (t.includes('doanh thu')) return call('get_revenue', {});
     text('Xin chào từ LLM giả (claude). tools=' + tools.join(','));

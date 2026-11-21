@@ -11,6 +11,7 @@ http.createServer((req, res) => {
     const t = last.parts[0].text.toLowerCase();
     if (t.includes('boom')) { res.writeHead(500, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ error: { message: 'sập' } })); }
     if (t.includes('khóa')) return reply([{ functionCall: { name: 'propose_disable_user', args: { email: (t.match(/\S+@\S+/) || [''])[0] } } }]);
+    if (t.includes('sách')) return reply([{ functionCall: { name: 'search_books', args: { query: 'Dế Mèn' } } }]);
     if (t.includes('quy trình')) return reply([{ functionCall: { name: 'search_knowledge', args: { query: 'thanh toán' } } }]);
     if (t.includes('doanh thu')) return reply([{ functionCall: { name: 'get_revenue', args: {} } }]);
     reply([{ text: 'Xin chào từ LLM giả (gemini). tools=' + tools.join(',') }]);

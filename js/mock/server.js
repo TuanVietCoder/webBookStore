@@ -496,6 +496,26 @@ function proposeDisable(user, db, email) {
   db.aiRequests.push(req); saveDb();
   return { preview: { type: 'PREVIEW', text: 'Mình sẽ thực hiện thao tác sau, cần bạn xác nhận:', requestId: req.requestId, confirmToken: req.token, summary: req.summary, expiresAt: req.expiresAt } };
 }
+// Tra cứu sách/tác giả/danh mục cho AI: chỉ đọc, bỏ bản ghi đã xóa mềm, trả trường rút gọn (không trả đường dẫn file).
+function aiCatalogTool(db, name, args) {
+  const nameOf = (list, id) => { const x = list.find((i) => i.rowId === id); return x ? x.name : null; };
+  const brief = (b) => ({ bookId: b.bookId, title: b.title, authors: b.authorIds.map((a) => nameOf(db.authors, a)).filter(Boolean), category: nameOf(db.categories, b.categoryId), publisher: nameOf(db.publishers, b.publisherId), price: b.price, status: b.status, servingStatus: b.servingStatus });
+  const live = db.books.filter((b) => !b.isDel);
+  if (name === 'search_books') {
+    const q = String(args.query || '').trim().toLowerCase(); const st = String(args.status || '').toUpperCase();
+    const hit = live.filter((b) => (!st || b.status === st) && (!q || [b.title, b.bookId, ...b.authorIds.map((a) => nameOf(db.authors, a)), nameOf(db.categories, b.categoryId), nameOf(db.publishers, b.publisherId)].some((t) => has(t, q))));
+    return { result: { total: hit.length, books: hit.slice(0, 10).map(brief), note: hit.length > 10 ? 'Chỉ hiển thị 10 kết quả đầu' : undefined } };
+  }
+  if (name === 'get_book') {
+    const b = live.find((x) => x.bookId.toLowerCase() === String(args.bookId || '').trim().toLowerCase());
+    return { result: b ? { ...brief(b), description: b.description, suspendReason: b.suspendReason || undefined, pdfFileCount: (b.files || []).length, hasActivePdf: (b.files || []).some((f) => f.active) } : { error: 'Không tìm thấy sách ' + args.bookId } };
+  }
+  const kinds = { authors: ['authors', 'authorIds'], categories: ['categories', 'categoryId'], publishers: ['publishers', 'publisherId'] };
+  const k = kinds[String(args.kind || '').toLowerCase()]; if (!k) return { result: { error: 'kind phải là authors, categories hoặc publishers' } };
+  const q = String(args.query || '').trim();
+  const items = db[k[0]].filter((x) => !x.isDel && (!q || has(x.name, q))).slice(0, 20).map((x) => ({ name: x.name, bookCount: live.filter((b) => (Array.isArray(b[k[1]]) ? b[k[1]].includes(x.rowId) : b[k[1]] === x.rowId)).length }));
+  return { result: { items } };
+}
 function execAiTool(user, db, name, args) {
   const perm = (p) => permsOf(user.role).includes(p);
   switch (name) {
@@ -503,6 +523,18 @@ function execAiTool(user, db, name, args) {
       const q = String(args.query || '').toLowerCase(); const words = q.split(/\s+/).filter((w) => w.length > 2);
       const hits = db.knowledge.filter((k) => k.status === 'PUBLISHED' && (k.keywords.some((w) => q.includes(w.toLowerCase())) || words.some((w) => has(k.title + ' ' + k.body, w)))).slice(0, 3);
       return { result: { articles: hits.map((k) => ({ title: k.title, content: k.body })) }, sources: hits.map((k) => k.title) };
+    }
+    case 'search_books': case 'get_book': case 'search_catalog': return aiCatalogTool(db, name, args);
+    case 'find_order': {
+      if (!perm('ORDER_SUPPORT_VIEW')) return { result: { error: 'Thiếu quyền xem đơn hàng' } };
+      const o = db.orders.find((x) => x.orderId.toLowerCase() === String(args.orderId || '').trim().toLowerCase());
+      if (!o) return { result: { error: 'Không tìm thấy đơn ' + args.orderId } };
+      const buyer = db.users.find((u) => u.rowId === o.buyerRowId);
+      return { result: { orderId: o.orderId, status: o.status, total: o.total, discount: o.discount, buyerEmail: buyer && buyer.email, createdAt: o.createdAt, items: (o.items || []).map((i) => ({ name: i.name, type: i.type, price: i.price })) } };
+    }
+    case 'list_content_reports': {
+      if (!perm('CONTENT_MODERATE')) return { result: { error: 'Thiếu quyền xử lý báo cáo nội dung' } };
+      return { result: { reports: db.contentReports.filter((r) => r.status === 'PENDING').slice(0, 10).map((r) => ({ id: r.rowId, targetType: r.targetType, targetRowId: r.targetRowId, reason: r.reason, createdAt: r.createdAt })) } };
     }
     case 'get_order_stats': { const by = {}; db.orders.forEach((o) => { by[o.status] = (by[o.status] || 0) + 1; }); return { result: { total: db.orders.length, byStatus: by } }; }
     case 'list_open_complaints': return { result: { complaints: db.complaints.filter((c) => c.status !== 'CLOSED' && c.status !== 'RESOLVED').slice(0, 10).map((c) => ({ code: c.code, subject: c.subject, status: c.status })) } };

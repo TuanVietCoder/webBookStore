@@ -11,6 +11,7 @@ const { chromium } = require('playwright');
     let t = await ask('xin chào'); ok('có trả lời từ mô hình AI', t.includes('LLM giả'), t);
     ok('Employee không được cấp tool tài chính/audit', t.includes('tools=') && !t.includes('get_revenue') && !t.includes('get_recent_audit'), t);
     t = await ask('hướng dẫn quy trình thanh toán'); ok('tool search_knowledge chạy và có nguồn', t.includes('Hoàn tất thanh toán') && t.includes('Nguồn'), t);
+    t = await ask('Dế Mèn có trong hệ thống không, sách nào'); ok('tra cứu sách trả đúng dữ liệu (BK002, Tô Hoài)', t.includes('BK002') && t.includes('Tô Hoài'), t);
     t = await ask('doanh thu hôm nay'); ok('tool tài chính bị chặn với Employee', /Thiếu quyền|chưa|Mình/.test(t), t);
     t = await ask('khóa tài khoản an@mail.test'); ok('thao tác ghi dừng ở PREVIEW, có nút xác nhận', (await page.$('text=Xác nhận thực hiện')) !== null, t);
     const before = await page.evaluate(async () => (await (await import('/js/api.js')).api.get('/admin/users', { q: 'an@mail.test' })).items[0]);
