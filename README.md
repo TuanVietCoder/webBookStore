@@ -57,5 +57,6 @@ Cách nhanh nhất (có hỗ trợ AI Gemini): `node server/index.js` rồi mở
 ## Cơ sở dữ liệu
 
 - `database/schema.sql`: script tạo CSDL SQL Server (53 bảng, khóa ngoại, index, CHECK, dữ liệu 3 vai trò). Tạo một database trống rồi chạy script.
+- `docs/TICH_HOP.md`: hướng dẫn ghép với backend/web của Phúc.
 - `docs/ERD.md`: sơ đồ quan hệ thực thể theo từng nhóm (Mermaid), ảnh PNG nằm trong `docs/erd/`.
 - Xem sơ đồ trong SSMS: chạy `schema.sql`, rồi Database Diagrams > New Database Diagram.
