@@ -28,6 +28,9 @@ Cách nhanh nhất (có hỗ trợ AI Gemini): `node server/index.js` rồi mở
 - Khi backend của Phúc xong: vòng lặp tool (`js/ai/llm.js` + `execAiTool`) chuyển sang backend, tool gọi service thật; xác thực vai trò bằng token phía server thay vì vai trò do trình duyệt gửi (ở giai đoạn mock, vai trò trong yêu cầu chưa được xác thực).
 - Kiểm thử không cần khóa thật: chạy `node tests/fake-claude.js 9912` (hoặc `fake-gemini.js 9911`), rồi `LLM_PROVIDER=claude ANTHROPIC_API_KEY=fake-key ANTHROPIC_BASE_URL=http://localhost:9912 PORT=8766 node server/index.js`, rồi `node tests/e2e-ai.js`.
 
+## Test gọn
+`npm install` (một lần) rồi `npm test`. Test tự bật server, mở trình duyệt (Chromium của Playwright, hoặc Edge/Chrome có sẵn trên máy) và kiểm tra 8 luồng chính: đăng nhập, phân quyền Manager/Employee, danh sách sách, AI hỏi đáp và AI khóa tài khoản qua bước xác nhận. Test luôn tắt khóa API nên AI chạy chế độ mô phỏng, không tốn tiền. Trên Windows nếu PowerShell chặn `npm`, dùng `npm.cmd install` và `npm.cmd test`.
+
 ## Cấu trúc
 - `js/app.js` router + khung giao diện + menu theo quyền
 - `server/` máy chủ Node nhỏ: web tĩnh + cầu nối Claude/Gemini; `js/ai/llm.js` vòng lặp gọi tool
