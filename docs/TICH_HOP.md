@@ -1,37 +1,22 @@
-# Hướng dẫn ghép web Admin với phần của Phúc
+# Ghi chú sáp nhập: Admin (Việt) + Backend/Client (Phúc)
 
-## 1. Lấy code và chạy
-1. `git clone https://github.com/TuanVietCoder/webBookStore.git`, vào thư mục rồi chạy `node server/index.js` (Node 18+, không cần cài thư viện), mở http://localhost:8080.
-2. Tài khoản thử: `manager@nhasach.test` / `Manager@123`, `employee@nhasach.test` / `Employee@123`.
-3. Kiểm tra nhanh: `npm install` rồi `npm test` (8 kiểm tra, AI chạy chế độ mô phỏng).
+## Cách đã ghép
+Nền là cấu trúc dự án của Phúc (`backend/`, `frontend/admin/`, `frontend/client/`), ghép ba chiều với bản Admin gốc `ace3f8b` nên **không có xung đột file nào**:
+- Phúc sửa: `frontend/admin/js/{api,config,ui}.js`, `pages/{books,knowledge,promos}.js`, `css/style.css`, `tests/e2e.js` (ảnh bìa, tải PDF thật, nối API).
+- Việt thêm: AI Admin dùng mô hình thật (`frontend/admin/js/pages/ai.js`, `js/mock/server.js`, `js/ai/llm.js` cho chế độ mock), cộng `backend/src/llm/*`, `backend/src/aiLoop.js`, `backend/src/loadEnv.js`, phần AI trong `backend/src/adminRoutes.js`, `database/`, `docs/ERD.md`.
+- Chạm vào code của Phúc ở đúng 3 chỗ: `server.js` (thêm 1 dòng `import './loadEnv.js'`), `adminRoutes.js` (thay route `POST /ai/admin/chat`, thêm 1 dòng import), `package.json`/`.env.example`/`docker-compose.yml` (thêm biến AI và script `test:ui`).
 
-## 2. Cách sáp nhập
-Web Admin là tĩnh (HTML + JS thuần), nên có hai cách:
-- **Cách A (khuyên dùng): giữ thư mục riêng.** Chép nguyên `index.html`, `css/`, `js/` vào thư mục `admin/` của dự án chung và cho backend phục vụ tĩnh thư mục đó. Không đụng vào code của Phúc.
-- **Cách B: gộp repo.** Đưa repo này vào dự án chung (thư mục `admin/`, `database/`, `docs/`), giữ nguyên lịch sử.
-Hai cách đều không cần build.
+## Chạy và kiểm tra
+1. `npm start` rồi mở http://localhost:3000/ (Client) và http://localhost:3000/admin/ (Admin).
+2. `npm test`: 11 test backend (10 của Phúc + 1 test AI dùng Claude giả) đều đạt.
+3. `npm install --no-save playwright` rồi `npm run test:ui`: 8 kiểm tra giao diện Admin trên backend thật, dùng DB tạm.
 
-## 3. Nối backend thật (thay mock)
-1. `js/config.js`: đặt `USE_MOCK: false`, chỉnh `API_BASE_URL` (mặc định `/api/v1`).
-2. Mọi lời gọi đi qua `js/api.js`: gắn `Authorization: Bearer <token>`, header `If-Match: <Version>` khi sửa. Lỗi cần trả `{errorCode, message, details, requestId}`; danh sách trả `{items, total, page, pageSize}`.
-3. Hợp đồng API đầy đủ nằm ở `js/mock/server.js` (mỗi `route(...)` là một endpoint; mã lỗi 401/403/409/422/428 như spec mục 9.2). 47 endpoint chính:
-   - Đăng nhập: `POST /auth/login`, `GET /auth/me`, `POST /auth/logout`
-   - Sách: `/admin/books` (GET, POST, PATCH, `/:id/files`, `/:id/serving-status`)
-   - Danh mục (tác giả, danh mục, NXB): `/admin/{catalog}` CRUD + xóa mềm + khôi phục
-   - Bundle/Event/Coupon (revision): `/admin/{kind}`, `/revisions`, `/revisions/:rev/{submit|approve|reject}`, `/disable`, `/history`
-   - Đơn hàng: `/admin/orders`; Tài khoản: `/admin/users`, `/disable`, `/enable`; Nhân sự: `/admin/staff`
-   - Khiếu nại, báo cáo nội dung, audit, báo cáo, tri thức AI, cấu hình
-   - AI: `POST /ai/admin/chat`, `/ai/admin/actions/:id/confirm`, `/ai/admin/actions/:id/decline`
-4. Chỉ có ở mock: `POST /__mock/reset`. `/ai/admin/actions/:id/decline` chưa có trong spec (thêm hoặc bỏ nút Hủy).
-5. CSDL: chạy `database/schema.sql` trên SQL Server (sơ đồ: `docs/ERD.md`).
+## AI Admin
+Xem mục "Trợ lý AI Admin dùng mô hình thật" trong README. Điểm khác bản mock: vòng lặp gọi tool chạy ở server và vai trò lấy từ phiên đăng nhập, nên đã xử lý xong hai điểm yếu "vai trò do trình duyệt gửi" và "khóa API nằm cạnh web tĩnh".
 
-## 4. Phần AI
-- Cầu nối nằm ở `server/` (Node): giữ khóa API, gọi Claude hoặc Gemini (`LLM_PROVIDER`), giới hạn tốc độ, chặn file nhạy cảm. Cấu hình bằng `.env` (mẫu `.env.example`, **không commit khóa**).
-- Danh sách tool và system prompt: `server/shared.js`. Phần chạy tool theo từng vai trò: hàm `execAiTool` trong `js/mock/server.js`.
-- **Khi có backend thật:** chuyển vòng lặp gọi tool (`js/ai/llm.js` + `execAiTool`) về backend, cho từng tool gọi service thật và xác thực vai trò bằng token phía server (hiện vai trò do trình duyệt gửi, chỉ chấp nhận ở giai đoạn mock). Ghi `AIActionLogs` cho mỗi lần gọi tool.
-- **AI Buyer** (web khách hàng) chưa làm: dùng lại `server/` và thêm bộ tool chỉ đọc catalog công khai, phiên khách 24 giờ.
-
-## 5. Việc còn mở
-- Cách thống nhất trạng thái DISABLED cho Bundle/Event/Coupon.
-- Quyền của Employee với Tri thức AI và Cấu hình hệ thống (tạm chỉ Manager).
-- Chưa có CSRF, tải file PDF thật, thông báo qua Outbox.
+## Việc còn mở
+1. Backend đang lưu bằng file JSON (`backend/data/db.json`); `database/schema.sql` (SQL Server, 53 bảng) chưa được nối. Cần thống nhất lộ trình chuyển.
+2. Chatbot Client dùng OpenAI, AI Admin dùng Claude/Gemini: nên thống nhất một nhà cung cấp để quản lý một khóa.
+3. AI Admin chưa ghi `AIActionLogs` từng lần gọi tool (mới ghi audit và trạng thái yêu cầu).
+4. Trạng thái DISABLED của Bundle/Event/Coupon và quyền Employee với Tri thức AI/Cấu hình vẫn chờ chốt trong đặc tả.
+5. Giữ bí mật: `.env`, `backend/data/db.json`, `backend/storage/` đã nằm trong `.gitignore`.

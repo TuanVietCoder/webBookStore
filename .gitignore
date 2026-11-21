@@ -1,5 +1,9 @@
+backend/data/*.json
+backend/storage/*.pdf
 .env
-.env.*
-!.env.example
 node_modules/
+.DS_Store
+backend/storage/covers/*
+!backend/storage/covers/.gitkeep
 *.log
+server.err

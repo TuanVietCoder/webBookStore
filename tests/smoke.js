@@ -1,9 +1,10 @@
-// Test gọn (smoke test) bằng Playwright: tự bật server, kiểm tra các luồng chính, in PASS/FAIL.
-// Chạy: npm install && npm test   (hoặc: node tests/smoke.js)
-// Test luôn chạy với AI ở chế độ mô phỏng (xóa khóa API) nên miễn phí và kết quả ổn định.
+// Test giao diện gọn (smoke test) bằng Playwright, chạy trên backend thật của dự án gộp.
+// Chạy: npm install --no-save playwright && node tests/smoke.js
+// Dùng DB tạm và tắt khóa API (AI chạy chế độ mô phỏng) nên không đụng dữ liệu thật, không tốn tiền.
 const { chromium } = require('playwright');
 const { spawn } = require('node:child_process');
-const PORT = process.env.TEST_PORT || 8799; const BASE = `http://localhost:${PORT}/index.html`;
+const os = require('node:os'); const path = require('node:path'); const fs = require('node:fs');
+const PORT = process.env.TEST_PORT || 8799; const BASE = `http://localhost:${PORT}/admin/`;
 
 async function launch() { // thử trình duyệt đi kèm Playwright, rồi tới Edge/Chrome có sẵn trên máy
   for (const opt of [{}, { channel: 'msedge' }, { channel: 'chrome' }]) { try { return await chromium.launch(opt); } catch { /* thử tiếp */ } }
@@ -11,7 +12,8 @@ async function launch() { // thử trình duyệt đi kèm Playwright, rồi t�
 }
 
 (async () => {
-  const server = spawn(process.execPath, ['server/index.js'], { env: { ...process.env, PORT, ANTHROPIC_API_KEY: '', GEMINI_API_KEY: '' }, stdio: 'ignore' });
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'smoke-'));
+  const server = spawn(process.execPath, ['backend/src/server.js'], { env: { ...process.env, PORT, HOST: '127.0.0.1', DATA_FILE: path.join(tmp, 'db.json'), ANTHROPIC_API_KEY: '', GEMINI_API_KEY: '', OPENAI_API_KEY: '' }, stdio: 'ignore' });
   await new Promise((r) => setTimeout(r, 1200));
   const results = []; const errs = []; let browser;
   const ok = (name, cond, extra = '') => results.push(`${cond ? 'PASS' : 'FAIL'}  ${name}${cond ? '' : '  -> ' + extra}`);
@@ -42,7 +44,7 @@ async function launch() { // thử trình duyệt đi kèm Playwright, rồi t�
     ok('Employee vào trang Audit bị chặn', (await page.textContent('.error-box')).includes('không có quyền'));
     ok('Không có lỗi JavaScript', errs.length === 0, errs.join(' | '));
   } catch (e) { results.push('FAIL  Lỗi khi chạy test  -> ' + e.message.split('\n')[0]); }
-  finally { if (browser) await browser.close(); server.kill(); }
+  finally { if (browser) await browser.close(); server.kill(); try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* bỏ qua */ } }
   console.log(results.join('\n')); const bad = results.filter((r) => r.startsWith('FAIL')).length;
   console.log(bad ? `\n${bad} lỗi` : `\nTất cả ${results.length} kiểm tra đều đạt`); process.exit(bad ? 1 : 0);
 })();

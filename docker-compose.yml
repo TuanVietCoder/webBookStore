@@ -1,0 +1,25 @@
+services:
+  bookstore:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      HOST: 0.0.0.0
+      PORT: "3000"
+      DEMO_PAYMENTS_ENABLED: "true" # CHỈ lab: mock payment, không đưa lên production
+      # Để dùng AI thật, tạo .env ở thư mục gốc từ .env.example (chỉ trong máy chủ).
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      OPENAI_TIMEOUT_MS: ${OPENAI_TIMEOUT_MS:-10000}
+      LLM_PROVIDER: ${LLM_PROVIDER:-claude}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-haiku-5-5}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.8-flash}
+    volumes:
+      - bookstore_data:/app/backend/data
+      - bookstore_pdf:/app/backend/storage
+    restart: unless-stopped
+volumes:
+  bookstore_data:
+  bookstore_pdf:
