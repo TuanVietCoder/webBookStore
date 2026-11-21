@@ -553,7 +553,7 @@ route('POST', '/ai/admin/chat', async ({ user, body }) => {
     try {
       const out = await askLlm({ role: user.role, history: body.history, message: msg, execTool: async (n, a) => execAiTool(user, getDb(), n, a || {}) });
       if (out.preview) return out.preview;
-      return { type: 'ANSWER', text: out.text, sources: out.sources.length ? out.sources : undefined, via: 'gemini' };
+      return { type: 'ANSWER', text: out.text, sources: out.sources.length ? out.sources : undefined, via: 'llm' };
     } catch (e) { note = 'Gemini tạm thời không phản hồi (' + e.message + '), đang dùng chế độ mô phỏng.'; }
   }
   const res = answerMock(user, db, msg);
