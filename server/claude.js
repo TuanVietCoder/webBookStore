@@ -29,7 +29,7 @@ export async function callClaude(role, contents) {
     const r = await fetch(`${BASE()}/v1/messages`, {
       method: 'POST', signal: ctrl.signal,
       headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: MODEL(), max_tokens: 800, temperature: 0.2, system: SYSTEM_PROMPT, messages: toMessages(contents), tools: jsonSchemaTools(role) }),
+      body: JSON.stringify({ model: MODEL(), max_tokens: 800, system: SYSTEM_PROMPT, messages: toMessages(contents), tools: jsonSchemaTools(role) }),
     });
     const data = await r.json().catch(() => ({}));
     if (!r.ok) { const e = new Error((data.error && data.error.message) || 'Claude trả lỗi ' + r.status); e.code = 'UPSTREAM'; e.status = r.status; throw e; }
