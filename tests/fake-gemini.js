@@ -13,6 +13,6 @@ http.createServer((req, res) => {
     if (t.includes('khóa')) return reply([{ functionCall: { name: 'propose_disable_user', args: { email: (t.match(/\S+@\S+/) || [''])[0] } } }]);
     if (t.includes('quy trình')) return reply([{ functionCall: { name: 'search_knowledge', args: { query: 'thanh toán' } } }]);
     if (t.includes('doanh thu')) return reply([{ functionCall: { name: 'get_revenue', args: {} } }]);
-    reply([{ text: 'Xin chào từ Gemini giả. tools=' + tools.join(',') }]);
+    reply([{ text: 'Xin chào từ LLM giả (gemini). tools=' + tools.join(',') }]);
   });
 }).listen(port, () => console.log('fake gemini :' + port));

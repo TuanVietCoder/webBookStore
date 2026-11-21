@@ -1,4 +1,4 @@
-// Vòng lặp hỏi đáp với Gemini qua cầu nối /api/v1/ai/llm (khóa API nằm ở server, không ở trình duyệt).
+// Vòng lặp hỏi đáp với mô hình AI (Claude hoặc Gemini) qua cầu nối /api/v1/ai/llm (khóa API nằm ở server, không ở trình duyệt).
 // Mô hình chỉ chọn tool; việc chạy tool và kiểm quyền do execTool (backend/mock) thực hiện.
 const MAX_STEPS = 4;
 let statusCache = null;
@@ -32,7 +32,7 @@ export async function askLlm({ role, history = [], message, execTool }) {
       const out = await execTool(c.functionCall.name, c.functionCall.args || {});
       if (out.preview) return { preview: out.preview };          // thao tác ghi: dừng ở bước xem trước
       if (out.sources) sources.push(...out.sources);
-      responses.push({ functionResponse: { name: c.functionCall.name, response: out.result } });
+      responses.push({ functionResponse: { id: c.functionCall.id, name: c.functionCall.name, response: out.result } });
     }
     contents.push({ role: 'user', parts: responses });
   }

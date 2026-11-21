@@ -1,10 +1,10 @@
-// Máy chủ nhỏ, không cần cài thư viện: phục vụ web tĩnh + cầu nối an toàn tới Gemini.
+// Máy chủ nhỏ, không cần cài thư viện: phục vụ web tĩnh + cầu nối an toàn tới Claude/Gemini.
 // Chạy: node server/index.js   (đọc khóa từ file .env hoặc biến môi trường)
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { callGemini, hasKey, isRole } from './gemini.js';
+import { callLlm, hasKey, isRole, provider } from './llm.js';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // Nạp .env (KEY=VALUE), không ghi đè biến môi trường đã có.
@@ -24,6 +24,7 @@ const send = (res, code, obj) => { res.writeHead(code, { 'Content-Type': 'applic
 const readBody = (req, max = 40000) => new Promise((ok, bad) => { let s = ''; req.on('data', (c) => { s += c; if (s.length > max) { bad(new Error('TOO_LARGE')); req.destroy(); } }); req.on('end', () => ok(s)); req.on('error', bad); });
 
 // Hội thoại do trình duyệt gửi: chỉ nhận đúng dạng text / functionCall / functionResponse, tối đa 24 lượt.
+const id = (o) => (typeof o.id === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(o.id) ? { id: o.id } : {});
 function cleanContents(c) {
   if (!Array.isArray(c) || !c.length || c.length > 24) return null;
   const out = [];
@@ -34,8 +35,8 @@ function cleanContents(c) {
       // thoughtSignature do Gemini sinh ra, phải trả lại nguyên vẹn thì các mô hình mới mới cho phép gọi tool tiếp.
       const sig = typeof p.thoughtSignature === 'string' && p.thoughtSignature.length < 8000 ? { thoughtSignature: p.thoughtSignature } : {};
       if (typeof p.text === 'string') parts.push({ text: p.text.slice(0, 4000), ...sig });
-      else if (p.functionCall && typeof p.functionCall.name === 'string') parts.push({ functionCall: { name: p.functionCall.name, args: p.functionCall.args || {} }, ...sig });
-      else if (p.functionResponse && typeof p.functionResponse.name === 'string') parts.push({ functionResponse: { name: p.functionResponse.name, response: p.functionResponse.response || {} } });
+      else if (p.functionCall && typeof p.functionCall.name === 'string') parts.push({ functionCall: { ...id(p.functionCall), name: p.functionCall.name, args: p.functionCall.args || {} }, ...sig });
+      else if (p.functionResponse && typeof p.functionResponse.name === 'string') parts.push({ functionResponse: { ...id(p.functionResponse), name: p.functionResponse.name, response: p.functionResponse.response || {} } });
       else return null;
     }
     out.push({ role: m.role, parts });
@@ -46,14 +47,14 @@ function cleanContents(c) {
 http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x'); const p = decodeURIComponent(url.pathname);
   try {
-    if (p === '/api/v1/ai/status' && req.method === 'GET') return send(res, 200, { llm: hasKey() });
+    if (p === '/api/v1/ai/status' && req.method === 'GET') return send(res, 200, { llm: hasKey(), provider: provider() });
     if (p === '/api/v1/ai/llm' && req.method === 'POST') {
-      if (!hasKey()) return send(res, 503, { errorCode: 'LLM_DISABLED', message: 'Chưa cấu hình khóa Gemini' });
+      if (!hasKey()) return send(res, 503, { errorCode: 'LLM_DISABLED', message: 'Chưa cấu hình khóa AI' });
       if (limited(req.socket.remoteAddress)) return send(res, 429, { errorCode: 'RATE_LIMIT', message: 'Gửi quá nhanh, thử lại sau ít phút' });
       let body; try { body = JSON.parse(await readBody(req)); } catch { return send(res, 400, { errorCode: 'BAD_REQUEST', message: 'Dữ liệu không hợp lệ' }); }
       const contents = cleanContents(body.contents);
       if (!isRole(body.role) || !contents) return send(res, 422, { errorCode: 'VALIDATION_ERROR', message: 'Vai trò hoặc hội thoại không hợp lệ' });
-      try { return send(res, 200, { parts: await callGemini(body.role, contents) }); }
+      try { return send(res, 200, { parts: await callLlm(body.role, contents) }); }
       catch (e) { return send(res, e.code === 'UPSTREAM' ? 502 : 500, { errorCode: 'LLM_ERROR', message: e.message }); }
     }
     if (p.startsWith('/api/')) return send(res, 404, { errorCode: 'NOT_FOUND', message: 'Không có endpoint' });
@@ -66,4 +67,4 @@ http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' }); res.end(data);
     });
   } catch (e) { send(res, 500, { errorCode: 'INTERNAL', message: 'Lỗi máy chủ' }); }
-}).listen(PORT, () => console.log(`Web Admin: http://localhost:${PORT}  |  Gemini: ${hasKey() ? 'ĐÃ có khóa' : 'CHƯA có khóa (AI dùng chế độ mô phỏng)'}`));
+}).listen(PORT, () => console.log(`Web Admin: http://localhost:${PORT}  |  AI: ${hasKey() ? provider() + ' (đã có khóa)' : 'CHƯA có khóa (AI dùng chế độ mô phỏng)'}`));

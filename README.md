@@ -18,19 +18,19 @@ Cách nhanh nhất (có hỗ trợ AI Gemini): `node server/index.js` rồi mở
 3. Backend cần trả đúng hợp đồng như mock: xem `js/mock/server.js` (mỗi `route(...)` là một endpoint theo mục 9.2). Phân trang trả `{items,total,page,pageSize}`; lỗi trả `{errorCode,message,details,requestId}`.
 4. Phần chỉ có ở mock: `POST /__mock/reset`, `POST /ai/admin/actions/{id}/decline` (spec chưa có endpoint hủy xem trước, nên thêm hoặc bỏ nút Hủy).
 
-## Tích hợp AI Gemini
-1. Lấy khóa tại https://aistudio.google.com (Get API key).
-2. Sao chép `.env.example` thành `.env`, điền `GEMINI_API_KEY=...` (tên mô hình đổi bằng `GEMINI_MODEL`). File `.env` đã nằm trong `.gitignore`, **không commit khóa**.
-3. Chạy `node server/index.js`. Dòng đầu tiên báo "ĐÃ có khóa" là nhận khóa thành công. Vào menu "Trợ lý AI Admin" để hỏi.
-- Khóa chỉ nằm ở server (`server/gemini.js`); trình duyệt gọi `/api/v1/ai/llm`. System prompt và danh sách tool do server quyết định, theo vai trò (Employee không có tool tài chính/audit).
+## Tích hợp AI (Claude hoặc Gemini)
+1. Lấy khóa: Claude tại https://console.anthropic.com, hoặc Gemini tại https://aistudio.google.com.
+2. Sao chép `.env.example` thành `.env`, đặt `LLM_PROVIDER=claude` (hoặc `gemini`) và điền khóa tương ứng (`ANTHROPIC_API_KEY=...`). File `.env` đã nằm trong `.gitignore`, **không commit khóa**. Tên mô hình đổi bằng `CLAUDE_MODEL` / `GEMINI_MODEL`.
+3. Chạy `node server/index.js`. Dòng đầu tiên báo "AI: claude (đã có khóa)" là nhận khóa thành công. Vào menu "Trợ lý AI Admin" để hỏi.
+- Khóa chỉ nằm ở server (`server/claude.js`, `server/gemini.js`); trình duyệt gọi `/api/v1/ai/llm`. System prompt và danh sách tool (`server/shared.js`) do server quyết định, theo vai trò (Employee không có tool tài chính/audit).
 - Mô hình chỉ chọn tool; tool chạy ở `js/mock/server.js` (`execAiTool`) và tự kiểm quyền. Thao tác ghi (khóa tài khoản) chỉ tạo bản xem trước, người dùng phải bấm xác nhận.
-- Không có khóa hoặc Gemini lỗi thì tự rơi về chế độ mô phỏng cũ (có thông báo).
+- Không có khóa hoặc nhà cung cấp lỗi thì tự rơi về chế độ mô phỏng cũ (có thông báo).
 - Khi backend của Phúc xong: vòng lặp tool (`js/ai/llm.js` + `execAiTool`) chuyển sang backend, tool gọi service thật; xác thực vai trò bằng token phía server thay vì vai trò do trình duyệt gửi (ở giai đoạn mock, vai trò trong yêu cầu chưa được xác thực).
-- Kiểm thử AI không cần khóa thật: `node tests/fake-gemini.js 9911`, rồi `GEMINI_API_KEY=fake-key GEMINI_BASE_URL=http://localhost:9911 PORT=8766 node server/index.js`, rồi `node tests/e2e-ai.js`.
+- Kiểm thử không cần khóa thật: chạy `node tests/fake-claude.js 9912` (hoặc `fake-gemini.js 9911`), rồi `LLM_PROVIDER=claude ANTHROPIC_API_KEY=fake-key ANTHROPIC_BASE_URL=http://localhost:9912 PORT=8766 node server/index.js`, rồi `node tests/e2e-ai.js`.
 
 ## Cấu trúc
 - `js/app.js` router + khung giao diện + menu theo quyền
-- `server/` máy chủ Node nhỏ: web tĩnh + cầu nối Gemini; `js/ai/llm.js` vòng lặp gọi tool
+- `server/` máy chủ Node nhỏ: web tĩnh + cầu nối Claude/Gemini; `js/ai/llm.js` vòng lặp gọi tool
 - `js/api.js` lớp gọi API (mock hoặc thật)
 - `js/ui.js` thành phần giao diện dùng chung (modal, form, bảng, toast)
 - `js/pages/*.js` các màn hình: tổng quan, sách & PDF, danh mục, Bundle/Event/Coupon (revision), đơn hàng, khiếu nại, báo cáo nội dung, tài khoản, nhân sự, báo cáo, audit, tri thức AI, cấu hình, trợ lý AI
