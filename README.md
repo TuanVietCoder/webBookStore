@@ -260,7 +260,7 @@ Menu **Admin → Trợ lý AI Admin** hỏi đáp bằng mô hình ngôn ngữ t
 1. Tạo file `.env` ở thư mục gốc từ `.env.example`, đặt `LLM_PROVIDER=claude` (hoặc `gemini`) và điền `ANTHROPIC_API_KEY` (hoặc `GEMINI_API_KEY`). Backend tự đọc `.env` khi khởi động. Không có khóa thì AI Admin tự dùng chế độ mô phỏng theo từ khóa.
 2. Mô hình chỉ **chọn tool** trong danh sách do server cấp theo vai trò (`backend/src/llm/shared.js`): Employee không có tool doanh thu/audit. Mỗi tool tự kiểm quyền lần nữa và chỉ đọc dữ liệu rút gọn. Vai trò lấy từ phiên đăng nhập phía server, không tin dữ liệu từ trình duyệt.
 3. Thao tác thay đổi dữ liệu (khóa tài khoản) chỉ tạo **bản xem trước**; người dùng bấm xác nhận (token dùng một lần, hết hạn sau 5 phút, từ chối nếu dữ liệu đã đổi) thì mới thực thi và ghi audit với nguồn `AI`.
-4. Chatbot của **Client** vẫn dùng OpenAI như cũ (`OPENAI_API_KEY`); hai chatbot độc lập.
+4. Chatbot của **Client** dùng OpenAI (`OPENAI_API_KEY`) hoặc Claude (`ANTHROPIC_API_KEY`, dùng chung khóa với AI Admin): ưu tiên OpenAI nếu có khóa OpenAI thật, ngược lại dùng Claude; ép chọn bằng `CLIENT_CHAT_PROVIDER=openai|claude`. Khóa bắt đầu bằng `sk-ant-` không bao giờ bị gửi tới OpenAI.
 5. Kiểm thử không cần khóa thật: `npm test` (gồm `backend/tests/ai-admin.test.js` dùng Claude giả) và `npm run test:ui` (Playwright, cần `npm install --no-save playwright`).
 
 ## Cơ sở dữ liệu SQL Server và sơ đồ
