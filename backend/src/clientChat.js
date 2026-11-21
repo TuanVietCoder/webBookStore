@@ -25,13 +25,22 @@ const STRONG_OFFTOPIC = [
   /\b(?:ke chuyen cuoi|hat mot bai|lam tho|viet tho|sang tac|ve tranh|giai toan|dich sang tieng|huong dan nau an|viet blog|viet bai|phat trien ung dung)\b/,
 ];
 
+// Gõ thiếu dấu, "kí/ký", "y/i" hoặc bỏ bớt chữ vẫn nhận ra tên sách: đủ >= 3 từ của tên (hoặc >= 60%) có trong câu hỏi.
+const canon = (s) => simplify(s).replace(/y/g, 'i');
+function fuzzyTitle(q, title) {
+  const tt = canon(title).split(' ').filter(Boolean);
+  if (tt.length < 2) return false;
+  const have = new Set(canon(q).split(' '));
+  const hit = tt.filter((t) => have.has(t)).length;
+  return hit >= Math.min(tt.length, 3) && hit / tt.length >= 0.6;
+}
 function isAllowed(message, publicBooks, contextBookIds) {
   const q = simplify(message);
   if (STRONG_OFFTOPIC.some((rule) => rule.test(q))) return { allowed: false, greeting: false };
   if (GREETING.test(q)) return { allowed: true, greeting: true };
   const literalTitle = publicBooks.some((b) => {
     const title = simplify(b.title);
-    return title && (q === title || (title.length >= 6 && q.includes(title)));
+    return title && (q === title || (title.length >= 6 && q.includes(title))) || fuzzyTitle(q, b.title);
   });
   const allowed = matchWord(q, DOMAIN) || matchWord(q, STORE) || literalTitle || (contextBookIds.length > 0 && matchWord(q, FOLLOW_UP));
   return { allowed, greeting: false };
