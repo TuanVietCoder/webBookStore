@@ -4,10 +4,12 @@ import { h, clear, guard, toast, pageHead } from '../ui.js';
 
 export async function render(root) {
   const log = h('div', { class: 'chat tall', 'aria-live': 'polite' }); const input = h('input', { type: 'text', placeholder: 'VD: Quy trình hoàn tất thanh toán? / Khóa tài khoản an@mail.test', 'aria-label': 'Câu hỏi' });
+  const history = [];
   const add = (who, el) => { log.append(h('div', { class: 'msg ' + (who === 'me' ? 'me' : '') }, el)); log.scrollTop = log.scrollHeight; };
   const send = async () => {
     const text = input.value.trim(); if (!text) return; input.value = ''; add('me', text);
-    const r = await guard(() => api.post('/ai/admin/chat', { message: text })); if (!r) return; reply(r);
+    const r = await guard(() => api.post('/ai/admin/chat', { message: text, history: history.slice() })); if (!r) return;
+    history.push({ role: 'user', text }); if (r.text) history.push({ role: 'model', text: r.text }); reply(r);
   };
   function reply(r) {
     if (r.type === 'PREVIEW') {

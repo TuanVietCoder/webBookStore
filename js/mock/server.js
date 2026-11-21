@@ -1,5 +1,6 @@
 // Mock API theo mục 9.2 của đặc tả v2.0.3. Trả đúng mã lỗi (403/409/422) như spec.
 import { getDb, saveDb, resetDb, nextId } from './db.js';
+import { llmAvailable, askLlm } from '../ai/llm.js';
 
 class HttpError extends Error {
   constructor(status, errorCode, message, details) { super(message); this.status = status; this.errorCode = errorCode; this.details = details; }
@@ -486,8 +487,47 @@ route('PATCH', '/admin/settings/:key', ({ user, params, body, ifMatch }) => {
 });
 
 // AI Admin (mô phỏng: có xem trước, xác nhận một lần, ghi AIActionLogs/Audit cùng RequestId)
-route('POST', '/ai/admin/chat', ({ user, body }) => {
+// Tool whitelist của AI (mỗi tool tự kiểm quyền; mô hình không được truy cập dữ liệu theo cách nào khác).
+function proposeDisable(user, db, email) {
+  const t = db.users.find((u) => u.email.toLowerCase() === String(email || '').toLowerCase());
+  if (!t) return { result: { error: 'Không tìm thấy tài khoản ' + email } };
+  if (!targetScope(user, t)) return { result: { error: 'Không đủ quyền khóa vai trò ' + t.role } };
+  const req = { requestId: 'AI-' + nextId(), token: 'ct-' + Math.random().toString(36).slice(2), userRowId: user.rowId, action: 'DISABLE_USER', targetRowId: t.rowId, targetVersion: t.version, status: 'PENDING', expiresAt: new Date(Date.now() + 5 * 60000).toISOString(), summary: `Khóa tài khoản ${t.email} (${t.role})` };
+  db.aiRequests.push(req); saveDb();
+  return { preview: { type: 'PREVIEW', text: 'Mình sẽ thực hiện thao tác sau, cần bạn xác nhận:', requestId: req.requestId, confirmToken: req.token, summary: req.summary, expiresAt: req.expiresAt } };
+}
+function execAiTool(user, db, name, args) {
+  const perm = (p) => permsOf(user.role).includes(p);
+  switch (name) {
+    case 'search_knowledge': {
+      const q = String(args.query || '').toLowerCase(); const words = q.split(/\s+/).filter((w) => w.length > 2);
+      const hits = db.knowledge.filter((k) => k.status === 'PUBLISHED' && (k.keywords.some((w) => q.includes(w.toLowerCase())) || words.some((w) => has(k.title + ' ' + k.body, w)))).slice(0, 3);
+      return { result: { articles: hits.map((k) => ({ title: k.title, content: k.body })) }, sources: hits.map((k) => k.title) };
+    }
+    case 'get_order_stats': { const by = {}; db.orders.forEach((o) => { by[o.status] = (by[o.status] || 0) + 1; }); return { result: { total: db.orders.length, byStatus: by } }; }
+    case 'list_open_complaints': return { result: { complaints: db.complaints.filter((c) => c.status !== 'CLOSED' && c.status !== 'RESOLVED').slice(0, 10).map((c) => ({ code: c.code, subject: c.subject, status: c.status })) } };
+    case 'find_user': { const u = db.users.find((x) => x.email.toLowerCase() === String(args.email || '').toLowerCase()); return { result: u ? { email: u.email, fullName: u.fullName, role: u.role, status: u.status } : { error: 'Không tìm thấy tài khoản' } }; }
+    case 'propose_disable_user': return proposeDisable(user, db, args.email);
+    case 'get_revenue': { if (!perm('REPORT_FINANCIAL')) return { result: { error: 'Thiếu quyền xem báo cáo tài chính' } }; const paid = db.orders.filter((o) => o.status === 'PAID'); return { result: { paidOrders: paid.length, revenueVnd: paid.reduce((s, o) => s + o.total, 0) } }; }
+    case 'get_recent_audit': { if (!perm('AUDIT_GLOBAL')) return { result: { error: 'Thiếu quyền xem audit toàn hệ thống' } }; return { result: { logs: db.auditLogs.slice(0, 10).map((a) => ({ at: a.occurredAt, action: a.actionCode, table: a.tableName, source: a.actionSource })) } }; }
+    default: return { result: { error: 'Tool không được phép: ' + name } };
+  }
+}
+route('POST', '/ai/admin/chat', async ({ user, body }) => {
   need(user, 'AI_ADMIN_USE'); const db = getDb(); const msg = String(body.message || '').trim(); must(msg, 'message', 'Nhập câu hỏi');
+  // Có khóa Gemini ở server -> dùng mô hình thật; lỗi hoặc không có khóa -> rơi về chế độ mô phỏng bên dưới.
+  let note = null;
+  if (await llmAvailable()) {
+    try {
+      const out = await askLlm({ role: user.role, history: body.history, message: msg, execTool: async (n, a) => execAiTool(user, getDb(), n, a || {}) });
+      if (out.preview) return out.preview;
+      return { type: 'ANSWER', text: out.text, sources: out.sources.length ? out.sources : undefined, via: 'gemini' };
+    } catch (e) { note = 'Gemini tạm thời không phản hồi (' + e.message + '), đang dùng chế độ mô phỏng.'; }
+  }
+  const res = answerMock(user, db, msg);
+  return note ? { ...res, text: note + '\n' + (res.text || '') } : res;
+});
+function answerMock(user, db, msg) {
   const low = msg.toLowerCase();
   const m = low.match(/(?:khóa|khoá)\s+(?:tài khoản\s+)?([^\s@]+@[^\s@]+\.[^\s@]+)/);
   if (m) {
@@ -506,7 +546,7 @@ route('POST', '/ai/admin/chat', ({ user, body }) => {
   const hits = db.knowledge.filter((k) => k.status === 'PUBLISHED' && (k.keywords.some((w) => low.includes(w.toLowerCase())) || low.split(/\s+/).some((w) => w.length > 4 && has(k.title + ' ' + k.body, w))));
   if (hits.length) return { type: 'ANSWER', text: hits.slice(0, 2).map((k) => `• ${k.title}: ${k.body}`).join('\n'), sources: hits.slice(0, 2).map((k) => k.title) };
   return { type: 'ANSWER', text: 'Mình chưa có tài liệu đã công bố phù hợp. Bạn có thể hỏi về thanh toán, complaint, Event, hoặc nhờ "khóa tài khoản <email>".' };
-});
+}
 route('POST', '/ai/admin/actions/:id/confirm', ({ user, params, body }) => {
   need(user, 'AI_ADMIN_USE'); const db = getDb(); const r = db.aiRequests.find((x) => x.requestId === params.id && x.userRowId === user.rowId); if (!r) throw E(404, 'NOT_FOUND', 'Yêu cầu không tồn tại');
   if (r.status !== 'PENDING') throw E(409, 'REQUEST_USED', 'Yêu cầu đã được dùng hoặc đã bị từ chối');
