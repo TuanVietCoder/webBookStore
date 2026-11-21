@@ -31,8 +31,10 @@ function cleanContents(c) {
     if (!m || !['user', 'model'].includes(m.role) || !Array.isArray(m.parts) || !m.parts.length) return null;
     const parts = [];
     for (const p of m.parts) {
-      if (typeof p.text === 'string') parts.push({ text: p.text.slice(0, 4000) });
-      else if (p.functionCall && typeof p.functionCall.name === 'string') parts.push({ functionCall: { name: p.functionCall.name, args: p.functionCall.args || {} } });
+      // thoughtSignature do Gemini sinh ra, phải trả lại nguyên vẹn thì các mô hình mới mới cho phép gọi tool tiếp.
+      const sig = typeof p.thoughtSignature === 'string' && p.thoughtSignature.length < 8000 ? { thoughtSignature: p.thoughtSignature } : {};
+      if (typeof p.text === 'string') parts.push({ text: p.text.slice(0, 4000), ...sig });
+      else if (p.functionCall && typeof p.functionCall.name === 'string') parts.push({ functionCall: { name: p.functionCall.name, args: p.functionCall.args || {} }, ...sig });
       else if (p.functionResponse && typeof p.functionResponse.name === 'string') parts.push({ functionResponse: { name: p.functionResponse.name, response: p.functionResponse.response || {} } });
       else return null;
     }

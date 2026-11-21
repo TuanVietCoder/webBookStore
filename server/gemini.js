@@ -1,7 +1,7 @@
 // Gọi Gemini phía server. Khóa API chỉ nằm ở biến môi trường GEMINI_API_KEY, không bao giờ gửi xuống trình duyệt.
 // System prompt và danh sách tool do SERVER quyết định; trình duyệt chỉ gửi vai trò và hội thoại.
 
-const MODEL = () => process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+const MODEL = () => process.env.GEMINI_MODEL || 'gemini-3.8-flash';
 const BASE = () => process.env.GEMINI_BASE_URL || 'https://generativelanguage.googleapis.com/v1beta';
 
 export const SYSTEM_PROMPT = `Bạn là Trợ lý AI Admin của hệ thống nhà sách PDF. Luôn trả lời bằng tiếng Việt, ngắn gọn, chính xác.
